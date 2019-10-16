@@ -22,6 +22,7 @@ routes.use(authMiddleware);
 routes.put('/users', UserController.update);
 routes.post('/files', upload.single('file'), FileController.store);
 
+routes.get('/meetups', MeetupController.index);
 routes.post('/meetups', MeetupController.store);
 routes.put('/meetups/:id', MeetupController.update);
 routes.delete('/meetups/:id', MeetupController.delete);
@@ -29,5 +30,7 @@ routes.delete('/meetups/:id', MeetupController.delete);
 routes.get('/organizing', OrganizingController.index);
 
 routes.post('/meetups/:id/subscriptions', SubscriptionController.store);
+
+routes.get('/subscriptions', SubscriptionController.index);
 
 export default routes;
