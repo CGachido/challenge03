@@ -1,9 +1,45 @@
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore } from 'date-fns';
+import {
+  startOfHour,
+  parseISO,
+  isBefore,
+  startOfDay,
+  endOfDay,
+} from 'date-fns';
+import { Op } from 'sequelize';
 
 import Meetup from '../models/Meetup';
+import User from '../models/User';
 
 class MeetupController {
+  async index(req, res) {
+    const { date, page = 1 } = req.query;
+    if (!date) {
+      return res.status(400).json({ error: 'Invalid date' });
+    }
+
+    const searchDate = parseISO(date);
+    const meetups = await Meetup.findAll({
+      where: {
+        date: {
+          [Op.between]: [startOfDay(searchDate), endOfDay(searchDate)],
+        },
+      },
+      limit: 10,
+      include: [
+        {
+          model: User,
+          as: 'organizer',
+          attributes: ['name', 'email'],
+        },
+      ],
+      offset: (page - 1) * 10,
+      order: ['date'],
+    });
+
+    return res.json(meetups);
+  }
+
   async store(req, res) {
     const schema = Yup.object().shape({
       title: Yup.string().required(),
@@ -58,7 +94,7 @@ class MeetupController {
     if (req.userId !== meetup.user_id) {
       return res
         .status(401)
-        .json({ error: 'Only the owner can update the meetup' });
+        .json({ error: 'Only the organizer can update the meetup' });
     }
 
     if (meetup.past) {
@@ -83,7 +119,7 @@ class MeetupController {
     if (req.userId !== meetup.user_id) {
       return res
         .status(401)
-        .json({ error: 'Only the owner can delete the meetup' });
+        .json({ error: 'Only the organizer can delete the meetup' });
     }
 
     await meetup.destroy();
